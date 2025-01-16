@@ -4,20 +4,39 @@ namespace HexMapsApp
 {
     public partial class HexMapsForm : Form
     {
+        
+
         public HexMapsForm()
         {
             InitializeComponent();
 
-            onStart();
+            Shown += HexMapsForm_Shown;
         }
 
-        void onStart()
+        private void HexMapsForm_Shown(object? sender, EventArgs e)
         {
-            HexGrid hexGrid = HexGrid.Create(10, 10);
-            log($"{hexGrid} created");
+            HexGrid hexGrid = HexGrid.Create(30, 20);
+            Log($"{hexGrid} created");
+
+            float x_factor = (float)(ClientSize.Width / hexGrid.Width);
+            float y_factor = (float)(ClientSize.Height / hexGrid.Height);
+            float factor = Math.Min(x_factor, y_factor);
+
+            Image image = new Bitmap(ClientSize.Width, ClientSize.Height);
+            Graphics g = Graphics.FromImage(image);
+            g.Clear(Color.White);
+
+            foreach (HexGrid.Hex hex in hexGrid.Hexes)
+            { 
+                g.DrawPolygon(Pens.Black, hex.Points.Select(p => Screen_point(p, factor)).ToArray());
+            }
+
+            CreateGraphics().DrawImage(image, 0, 0);
         }
 
-        void log(string msg)
+        static PointF Screen_point(HexGrid.Point p, float factor) => new((float)p.X * factor, (float)p.Y * factor);
+
+        static void Log(string msg)
         {
             System.Diagnostics.Debug.WriteLine(msg);
         }
