@@ -26,8 +26,15 @@ namespace HexMapsApp
             Graphics g = Graphics.FromImage(image);
             g.Clear(Color.White);
 
+            Random rnd = new Random();
+
+            int hex_index = rnd.Next(0, 30 * 20);
             foreach (HexGrid.Hex hex in hexGrid.Hexes)
-            { 
+            {
+                if (hex.Neighbors.Contains(hex_index))
+                {
+                    g.FillPolygon(Brushes.Red, hex.Points.Select(p => Screen_point(p, factor)).ToArray());
+                }
                 g.DrawPolygon(Pens.Black, hex.Points.Select(p => Screen_point(p, factor)).ToArray());
             }
 

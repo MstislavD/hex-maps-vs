@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -16,16 +17,23 @@ namespace HexGeometry
             public static Point operator +(Point p1, Point p2) => new(p1.X + p2.X, p1.Y + p2.Y);
         }
 
-        public readonly struct Hex(HexGrid.Point[] points)
+        public readonly struct Hex(Point[] points, int[] neighbors)
         {
             public Point[] Points { get; } = points;
+
+            public int[] Neighbors { get; } = neighbors;
+
+            public override string ToString()
+            {
+                return $"Neighbors: {string.Join(", ", Neighbors)}";
+            }
         }
 
         readonly int columns;
         readonly int rows;
         readonly double width;
         readonly double height;
-        readonly Hex[,] hexes;
+        readonly Hex[] hexes;
 
         public int Columns { get { return columns; } }
         public int Rows { get { return rows; } }
@@ -33,27 +41,14 @@ namespace HexGeometry
         public double Width { get { return width; } }
         public double Height { get { return height; } }
 
-        public IEnumerable<Hex> Hexes
-        {
-            get
-            {
-                for (int i = 0; i < rows; i++)
-                {
-                    for (int j = 0; j < columns; j++)
-                    {
-                        yield return hexes[i, j];
-                    }
-                }
-            }
-        }
-
+        public IEnumerable<Hex> Hexes => hexes;
         public static HexGrid Create(int columns, int rows) => new(columns, rows);
 
         HexGrid(int columns, int rows)
         {
             this.columns = columns;
             this.rows = rows;
-            hexes = new Hex[rows, columns];
+            hexes = new Hex[rows * columns];
 
             double l_radius = 1;
             double s_radius = l_radius * Math.Sqrt(3) / 2;
@@ -66,23 +61,59 @@ namespace HexGeometry
 
             double center_x = s_radius;
             double center_y = l_radius;
+
+            int[][] n_indexes = [
+                [-columns, 1, columns, columns - 1, -1, -columns - 1],
+                [-columns + 1, 1, columns + 1, columns, -1, -columns]
+                ];
      
             Point[] hex_points = Generate_hex_points(l_radius, s_radius);
 
             bool shift = true;
 
-            for (int i = 0; i < rows; i++, center_y += y_step, center_x -= width)
+            for (int i = 0, count = 0; i < rows; i++, center_y += y_step, center_x -= width)
             {
                 shift = !shift;
                 center_x += shift ? x_step : 0;
 
-                for (int j = 0; j < columns; j++, center_x += x_step)
+                for (int j = 0; j < columns; j++, count++, center_x += x_step)
                 {
                     Point center = new(center_x, center_y);
                     Point[] points = hex_points.Select(p => center + p).ToArray();
-                    hexes[i, j] = new(points);
+                    int[] neighbors = get_neighbor_indices(n_indexes, shift, i, j, count);
+                    hexes[count] = new(points, neighbors);
                 }
             }
+        }
+
+        private int[] get_neighbor_indices(int[][] n_indexes, bool shift, int i, int j, int count)
+        {
+            int[] neighbors = n_indexes[shift ? 1 : 0].Select(i => i + count).ToArray();
+            if (j == 0)
+            {
+                neighbors[4] = -1;
+                if (!shift)
+                {
+                    neighbors[3] = neighbors[5] = -1;
+                }
+            }
+            if (j == columns - 1)
+            {
+                neighbors[1] = -1;
+                if (shift)
+                {
+                    neighbors[0] = neighbors[2] = -1;
+                }
+            }
+            if (i == 0)
+            {
+                neighbors[0] = neighbors[5] = -1;
+            }
+            if (i == rows - 1)
+            {
+                neighbors[2] = neighbors[3] = -1;
+            }
+            return neighbors;
         }
 
         static Point[] Generate_hex_points(double l_radius, double s_radius)
