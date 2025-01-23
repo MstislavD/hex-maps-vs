@@ -1,4 +1,5 @@
 using HexGeometry;
+using MapGeneration;
 
 namespace HexMapsApp
 {
@@ -15,11 +16,15 @@ namespace HexMapsApp
 
         private void HexMapsForm_Shown(object? sender, EventArgs e)
         {
-            Random rnd = new();
-            HexGrid parentGrid = HexGrid.Create(15, 10);
-            Color[] colors = parentGrid.Hexes.Select(h => random_color(rnd)).ToArray();
+            int columns = 10;
+            int rows = 7;
+            int levels = 3;
+            int shown_level =0;
 
-            HexGrid hexGrid = HexGrid.CreateChild(parentGrid);
+            Random rnd = new();
+            RegionMap map = RegionMap.Create(columns, rows, levels, rnd);
+            HexGrid hexGrid = map.GetGridAtLevel(levels - 1);
+            Color[] colors = map.Regions.Select(r => random_color(rnd)).ToArray();
 
             float x_factor = (float)(ClientSize.Width / hexGrid.Width);
             float y_factor = (float)(ClientSize.Height / hexGrid.Height);
@@ -31,25 +36,14 @@ namespace HexMapsApp
 
             foreach (HexGrid.Hex hex in hexGrid.Hexes)
             {
-
-                int parent = choose_parent(hexGrid, hex, rnd);
-                SolidBrush brush = new(colors[parent]);
+                RegionMap.Region region = map.GetRegionByHex(levels - 1, hex.Index);
+                RegionMap.Region ancestor = map.GetAncestorAtLevel(region, shown_level);
+                SolidBrush brush = new(colors[ancestor.Index]);
                 g.FillPolygon(brush, hex.Points.Select(p => Screen_point(p, factor)).ToArray());
                 g.DrawPolygon(Pens.Black, hex.Points.Select(p => Screen_point(p, factor)).ToArray());
             }
 
             CreateGraphics().DrawImage(image, 0, 0);
-        }
-
-        static int choose_parent(HexGrid hexGrid, HexGrid.Hex hex, Random rnd)
-        {
-            if (hex.Parent > -1)
-            {
-                return hex.Parent;
-            }
-
-            int[] candidates = hex.Neighbors.Where(n => n > -1).Select(n => hexGrid.GetHex(n).Parent).Where(p => p > -1).ToArray();
-            return candidates[rnd.Next(candidates.Length)];
         }
 
         static PointF Screen_point(HexGrid.Point p, float factor) => new((float)p.X * factor, (float)p.Y * factor);

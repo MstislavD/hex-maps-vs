@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HexGeometry\HexGeometry.csproj" />
+    <ProjectReference Include="..\MapGeneration\MapGeneration.csproj" />
   </ItemGroup>
 
 </Project>
