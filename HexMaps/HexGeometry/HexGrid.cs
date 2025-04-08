@@ -10,7 +10,7 @@ namespace HexGeometry
 {
     public class HexGrid
     {
-        public readonly struct Point(double x, double y)
+        public class Point(double x, double y)
         {
             public double X { get; } = x;
             public double Y { get; } = y;
@@ -18,9 +18,9 @@ namespace HexGeometry
             public static Point operator +(Point p1, Point p2) => new(p1.X + p2.X, p1.Y + p2.Y);
         }
 
-        public readonly struct Hex(int index, Point[] points, int[] neighbors, int parent)
+        public class Hex(int index, Point[] points, int[] neighbors, int parent)
         {
-            public readonly int Index { get; } = index;
+            public int Index { get; } = index;
             public Point[] Points { get; } = points;
 
             public int[] Neighbors { get; } = neighbors;
@@ -134,7 +134,7 @@ namespace HexGeometry
             return neighbors;
         }
 
-        static Point[] Generate_hex_points(double l_radius, double s_radius)
+        public static Point[] Generate_hex_points(double l_radius, double s_radius)
         {
 
             return [

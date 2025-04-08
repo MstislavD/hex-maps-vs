@@ -6,15 +6,17 @@ namespace MapGeneration
 {
     public class RegionMap
     {
-        public struct Region(int index, int level, int parent)
+        public class Region(int index, int level, int parent)
         {
             public int Index { get; } = index;
-            public readonly int Level { get; } = level;
-            public readonly int Parent { get; } = parent;
+            public int Level { get; } = level;
+            public int Parent { get; } = parent;
         }
 
         HexGrid[] hexGrids;
         List<Region> regions;
+
+        public int Levels => hexGrids.Length;
 
         public static RegionMap Create(int columns, int rows, int levels, Random rnd) => new(columns, rows, levels, rnd);
 
