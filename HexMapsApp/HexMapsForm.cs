@@ -8,8 +8,7 @@ namespace HexMapsApp
     {
         int menu_width;
         RegionMap? map;
-        Random rnd = new();
-        Color[]? region_colors;
+        int seed;
 
         public HexMapsForm()
         {
@@ -20,6 +19,8 @@ namespace HexMapsApp
 
         void place_controls()
         {
+            // This code probably belongs to InitializeComponent() in HexMapsForm.Designer.cs
+
             DoubleBuffered = true;
             Shown += regenerate_map;
             Resize += redraw_map;
@@ -51,8 +52,10 @@ namespace HexMapsApp
             int rows = 7;
             int levels = 5;
 
+            seed = new Random().Next();
+            Random rnd = new Random(seed);
+
             map = RegionMap.Create(columns, rows, levels, rnd);
-            region_colors = map.Regions.Select(r => random_color(rnd)).ToArray();
 
             Invalidate();
         }
@@ -70,9 +73,13 @@ namespace HexMapsApp
         {
             if (map is null) return;
 
-            int shown_level = 0;
+            int region_level = 0;
+            int cell_level = map.Levels - 1;
 
-            HexGrid hexGrid = map.GetGridAtLevel(map.Levels - 1);
+            HexGrid hexGrid = map.GetGridAtLevel(cell_level);
+
+            Random rnd = new Random(seed);
+            var region_to_brush = map.GetRegions(region_level).ToDictionary(r => r, r => new SolidBrush(random_color(rnd)));
 
             int img_width = ClientSize.Width - menu_width;
             int img_height = ClientSize.Height;
@@ -90,9 +97,9 @@ namespace HexMapsApp
 
             foreach (HexGrid.Hex hex in hexGrid.Hexes)
             {
-                RegionMap.Region region = map.GetRegionByHex(map.Levels - 1, hex.Index);
-                RegionMap.Region ancestor = map.GetAncestorAtLevel(region, shown_level);
-                SolidBrush brush = new(region_colors[ancestor.Index]);
+                RegionMap.Region region = map.GetRegionByHex(cell_level, hex.Index);
+                RegionMap.Region ancestor = map.GetAncestorAtLevel(region, region_level);
+                SolidBrush brush = region_to_brush[ancestor];
                 g.FillPolygon(brush, hex.Points.Select(p => Screen_point(p, factor)).ToArray());
                 g.DrawPolygon(Pens.Black, hex.Points.Select(p => Screen_point(p, factor)).ToArray());
             }

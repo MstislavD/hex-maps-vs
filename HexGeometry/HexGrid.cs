@@ -42,12 +42,15 @@ namespace HexGeometry
         public int Columns { get { return columns; } }
         public int Rows { get { return rows; } }
 
+        public int Size => hexes.Length;
+
         public double Width { get { return width; } }
         public double Height { get { return height; } }
 
         public Hex GetHex(int index) => hexes[index];
 
         public IEnumerable<Hex> Hexes => hexes;
+
         public static HexGrid Create(int columns, int rows) => new(columns, rows);
 
         public static HexGrid CreateChild(HexGrid grid) => new(grid.Columns * 2, grid.Rows * 2 - 1);
