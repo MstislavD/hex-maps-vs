@@ -4,7 +4,7 @@ using HexGeometry;
 
 namespace MapGeneration
 {
-    public class RegionMap
+    public partial class RegionMap
     {
         public class Region(int level, int parent)
         {
@@ -41,17 +41,17 @@ namespace MapGeneration
             hexGrids[0] = HexGrid.Create(rows, columns);
             regions[0] = hexGrids[0].Hexes.Select(h => new Region(0, -1)).ToArray();
 
-            IParentGenerator parent_generator = new EqualSizeParentGenerator(this, rnd);
-
             for (int level = 1; level < levels; level++)
             {
+                IParentGenerator parent_generator = false ? new RandomParentGenerator(this, level, rnd) : new EqualSizeParentGenerator(this, level, rnd);
+
                 hexGrids[level] = HexGrid.CreateChild(hexGrids[level - 1]);
                 regions[level] = new Region[hexGrids[level].Size];
 
                 foreach (int index in permutation(hexGrids[level].Size, rnd))
                 {
                     HexGrid.Hex hex = hexGrids[level].GetHex(index);
-                    int parent = parent_generator.GetParent(level, hex);
+                    int parent = parent_generator.GetParent(hex);
                     regions[level][index] = new(level, parent);
                 }
             }
@@ -70,82 +70,5 @@ namespace MapGeneration
                 yield return result;
             }           
         }
-    }
-
-    interface IParentGenerator
-    {
-        int GetParent(int level, HexGrid.Hex hex);
-    }
-
-    class RandomParentGenerator : IParentGenerator 
-    {
-        RegionMap map;
-        Random rnd;
-        public RandomParentGenerator(RegionMap map, Random rnd)
-        {
-            this.map = map;
-            this.rnd = rnd;
-        }
-
-        public int GetParent(int level, HexGrid.Hex hex)
-        {
-            if (hex.Parent > -1)
-            {
-                return hex.Parent;
-            }
-
-            HexGrid grid = map.GetGridAtLevel(level);
-            int[] candidates = hex.Neighbors.Where(n => n > -1).Select(n => grid.GetHex(n).Parent).Where(p => p > -1).ToArray();
-            return candidates[rnd.Next(candidates.Length)];
-        }
-    }
-
-    class EqualSizeParentGenerator : IParentGenerator 
-    {
-        RegionMap map;
-        Random rnd;
-        Dictionary<HexGrid.Hex, int> hex_to_size = new Dictionary<HexGrid.Hex, int>();
-        public EqualSizeParentGenerator(RegionMap map, Random rnd)
-        {
-            this.map = map;
-            this.rnd = rnd;
-        }
-
-        public int GetParent(int level, HexGrid.Hex hex)
-        {
-            if (hex.Parent > -1)
-            {
-                return hex.Parent;
-            }
-
-            HexGrid grid = map.GetGridAtLevel(level);
-            HexGrid parent_grid = map.GetGridAtLevel(level - 1);
-
-            (int, int)[] candidates =
-                hex.Neighbors
-                .Where(n => n > -1)
-                .Select(n => grid.GetHex(n).Parent)
-                .Where(p => p > -1)
-                .Select(i => (i, hex_to_size.GetValueOrDefault(parent_grid.GetHex(i))))
-                .OrderByDescending(t => t.Item2)
-                .ToArray();
-
-            candidates = candidates.Where(t => t.Item2 == candidates[0].Item2).ToArray();
-
-            int index = rnd.Next(candidates.Length);
-
-            HexGrid.Hex parent = parent_grid.GetHex(index);
-            if (hex_to_size.ContainsKey(parent_grid.GetHex(index)))
-            {
-                hex_to_size[parent] += 1;
-            }
-            else
-            {
-                hex_to_size[parent] = 1;
-            }
-            
-            return candidates[index].Item1;
-
-        }
-    }
+    }    
 }
