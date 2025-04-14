@@ -10,6 +10,8 @@ namespace HexMapsApp
         RegionMap? map;
         int seed;
 
+        ComboBox? reg_gen_mode_dropdown;
+
         public HexMapsForm()
         {
             InitializeComponent();
@@ -26,6 +28,7 @@ namespace HexMapsApp
             Resize += redraw_map;
 
             FlowLayoutPanel menuPanel = new FlowLayoutPanel();
+            menuPanel.FlowDirection = FlowDirection.TopDown;
             menuPanel.AutoSize = true;
             menuPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
@@ -33,13 +36,39 @@ namespace HexMapsApp
             gen_button.AutoSize = true;
             gen_button.Text = "Generate";
             gen_button.Click += regenerate_map;
-            
-            menuPanel.Controls.AddRange([gen_button]);
+
+            reg_gen_mode_dropdown = new ComboBox();
+            reg_gen_mode_dropdown.DataSource = Enum.GetValues(typeof(RegionMap.RegionGeneration));
+            reg_gen_mode_dropdown.DropDownWidth = drop_down_width(Enum.GetValues(typeof(RegionMap.RegionGeneration)));
+            reg_gen_mode_dropdown.DropDownStyle = ComboBoxStyle.DropDownList;
+            reg_gen_mode_dropdown.SelectedIndexChanged += regenerate_map_keep_seed;
+
+            menuPanel.Controls.AddRange([gen_button, reg_gen_mode_dropdown]);
 
             Controls.Add(menuPanel);
 
             menu_width = menuPanel.Width;
         }
+
+        int drop_down_width(Array array)
+        {
+            int maxWidth = 0;
+            int temp = 0;
+            Label label1 = new Label();
+
+            foreach (var obj in array)
+            {
+                label1.Text = obj.ToString();
+                temp = label1.PreferredWidth;
+                if (temp > maxWidth)
+                {
+                    maxWidth = temp;
+                }
+            }
+            label1.Dispose();
+            return maxWidth;
+        }
+
 
         private void redraw_map(object? sender, EventArgs e)
         {
@@ -48,16 +77,22 @@ namespace HexMapsApp
 
         void regenerate_map(object? sender, EventArgs e)
         {
+            seed = new Random().Next();
+            regenerate_map_keep_seed(sender, e) ;
+        }
+        void regenerate_map_keep_seed(object? sender, EventArgs e)
+        {
             int columns = 10;
             int rows = 7;
             int levels = 5;
 
-            seed = new Random().Next();
             Random rnd = new Random(seed);
 
-            map = RegionMap.Create(columns, rows, levels, rnd);
+            RegionMap.RegionGeneration reg_gen =
+                (RegionMap.RegionGeneration)(reg_gen_mode_dropdown?.SelectedItem ?? RegionMap.RegionGeneration.Random);
+            map = RegionMap.Create(columns, rows, levels, reg_gen, rnd);
 
-            Invalidate();
+            redraw_map(sender, e);
         }
 
         static PointF Screen_point(HexGrid.Point p, float factor) => new((float)p.X * factor, (float)p.Y * factor);

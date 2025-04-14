@@ -6,6 +6,8 @@ namespace MapGeneration
 {
     public partial class RegionMap
     {
+
+        public enum RegionGeneration { Random, EqualSize }
         public class Region(int level, int parent)
         {
             public int Level { get; } = level;
@@ -17,7 +19,8 @@ namespace MapGeneration
 
         public int Levels => hexGrids.Length;
 
-        public static RegionMap Create(int columns, int rows, int levels, Random rnd) => new(columns, rows, levels, rnd);
+        public static RegionMap Create(int columns, int rows, int levels, RegionGeneration reg_gen, Random rnd) => 
+            new(columns, rows, levels, reg_gen, rnd);
 
         public IEnumerable<Region> GetRegions(int gridLevel) => regions[gridLevel];
 
@@ -34,7 +37,7 @@ namespace MapGeneration
             return region;
         }
 
-        RegionMap(int rows, int columns, int levels, Random rnd)
+        RegionMap(int rows, int columns, int levels, RegionGeneration reg_gen, Random rnd)
         {
             hexGrids = new HexGrid[levels];
             regions = new Region[levels][];
@@ -43,7 +46,9 @@ namespace MapGeneration
 
             for (int level = 1; level < levels; level++)
             {
-                IParentGenerator parent_generator = false ? new RandomParentGenerator(this, level, rnd) : new EqualSizeParentGenerator(this, level, rnd);
+                IParentGenerator parent_generator = reg_gen == RegionGeneration.Random ? 
+                    new RandomParentGenerator(this, level, rnd) : 
+                    new EqualSizeParentGenerator(this, level, rnd);
 
                 hexGrids[level] = HexGrid.CreateChild(hexGrids[level - 1]);
                 regions[level] = new Region[hexGrids[level].Size];
