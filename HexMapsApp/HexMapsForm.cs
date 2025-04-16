@@ -9,7 +9,8 @@ namespace HexMapsApp
         int menu_width;
         RegionMap? map;
         int seed;
-
+        
+        ToolTip toolTip = new ToolTip();
         ComboBox? reg_gen_mode_dropdown;
 
         public HexMapsForm()
@@ -37,10 +38,7 @@ namespace HexMapsApp
             gen_button.Text = "Generate";
             gen_button.Click += regenerate_map;
 
-            reg_gen_mode_dropdown = new ComboBox();
-            reg_gen_mode_dropdown.DataSource = Enum.GetValues(typeof(RegionMap.RegionGeneration));
-            reg_gen_mode_dropdown.DropDownWidth = drop_down_width(Enum.GetValues(typeof(RegionMap.RegionGeneration)));
-            reg_gen_mode_dropdown.DropDownStyle = ComboBoxStyle.DropDownList;
+            reg_gen_mode_dropdown = drop_down_list(typeof(RegionMap.RegionGeneration));
             reg_gen_mode_dropdown.SelectedIndexChanged += regenerate_map_keep_seed;
 
             menuPanel.Controls.AddRange([gen_button, reg_gen_mode_dropdown]);
@@ -50,25 +48,20 @@ namespace HexMapsApp
             menu_width = menuPanel.Width;
         }
 
-        int drop_down_width(Array array)
+        ComboBox drop_down_list(Type enumType)
         {
-            int maxWidth = 0;
-            int temp = 0;
-            Label label1 = new Label();
-
-            foreach (var obj in array)
-            {
-                label1.Text = obj.ToString();
-                temp = label1.PreferredWidth;
-                if (temp > maxWidth)
-                {
-                    maxWidth = temp;
-                }
-            }
-            label1.Dispose();
-            return maxWidth;
+            ComboBox comboBox = new ComboBox();
+            comboBox.DataSource = Enum.GetValues(enumType);
+            comboBox.DropDownWidth = Enum.GetNames(enumType).Max(x => TextRenderer.MeasureText(x, DefaultFont).Width);
+            comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            toolTip.SetToolTip(comboBox, enum_name(enumType));
+            return comboBox;
         }
 
+        static string enum_name(Type enumType)
+        {
+            return enumType.Name.Aggregate("", (name, c) => name + (char.IsLower(c) ? c : $" {c}"));
+        }
 
         private void redraw_map(object? sender, EventArgs e)
         {
