@@ -9,8 +9,7 @@ namespace HexMapsApp
         int menu_width;
         RegionMap? map;
         int seed;
-        
-        ToolTip toolTip = new ToolTip();
+       
         ComboBox? reg_gen_mode_dropdown;
 
         public HexMapsForm()
@@ -23,6 +22,8 @@ namespace HexMapsApp
         void place_controls()
         {
             // This code probably belongs to InitializeComponent() in HexMapsForm.Designer.cs
+
+            ToolTip toolTip = new ToolTip();
 
             DoubleBuffered = true;
             Shown += regenerate_map;
@@ -38,7 +39,7 @@ namespace HexMapsApp
             gen_button.Text = "Generate";
             gen_button.Click += regenerate_map;
 
-            reg_gen_mode_dropdown = drop_down_list(typeof(RegionMap.RegionGeneration));
+            reg_gen_mode_dropdown = drop_down_list(typeof(RegionMap.RegionGeneration), toolTip);
             reg_gen_mode_dropdown.SelectedIndexChanged += regenerate_map_keep_seed;
 
             menuPanel.Controls.AddRange([gen_button, reg_gen_mode_dropdown]);
@@ -46,9 +47,19 @@ namespace HexMapsApp
             Controls.Add(menuPanel);
 
             menu_width = menuPanel.Width;
+
+            Label info = new Label();
+            info.Location = new Point(menu_width + 5, 5);
+            info.AutoSize = true;
+            new_info += (s, str) => info.Text = str;
+
+            Controls.Add(info);
         }
 
-        ComboBox drop_down_list(Type enumType)
+        event EventHandler<string> new_info;
+
+
+        static ComboBox drop_down_list(Type enumType, ToolTip toolTip)
         {
             ComboBox comboBox = new ComboBox();
             comboBox.DataSource = Enum.GetValues(enumType);
@@ -84,6 +95,9 @@ namespace HexMapsApp
             RegionMap.RegionGeneration reg_gen =
                 (RegionMap.RegionGeneration)(reg_gen_mode_dropdown?.SelectedItem ?? RegionMap.RegionGeneration.Random);
             map = RegionMap.Create(columns, rows, levels, reg_gen, rnd);
+
+            //Log(map.AnalyzeRegions());
+            new_info.Invoke(this, map.AnalyzeRegions());
 
             redraw_map(sender, e);
         }

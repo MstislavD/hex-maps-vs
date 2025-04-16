@@ -37,6 +37,29 @@ namespace MapGeneration
             return region;
         }
 
+        public string AnalyzeRegions()
+        {
+            int level = hexGrids.Length - 1;
+            var agg = regions[level].AggregateBy(r => GetAncestorAtLevel(r, 0), r => 0, (size, r) => size + 1).Select(r => r.Value).ToList();
+            agg.Sort();
+
+            string result = "";
+            result += $"Min: {agg[0]}";
+            result += $"\nQuantile 25%: {agg[(int)(agg.Count * 0.25)]}";
+            result += $"\nQuantile 50%: {agg[(int)(agg.Count * 0.5)]}";
+            result += $"\nQuantile 75%: {agg[(int)(agg.Count * 0.75)]}";
+            result += $"\nMax: {agg[agg.Count - 1]}";
+
+            return result ;
+
+
+            //var region_to_size = agg.ToDictionary();
+            //for (int i = 0; i < hexGrids[0].Size; i++)
+            //{
+            //    Debug.WriteLine($"{i}: {region_to_size[regions[0][i]]}");
+            //}
+        }
+
         RegionMap(int rows, int columns, int levels, RegionGeneration reg_gen, Random rnd)
         {
             hexGrids = new HexGrid[levels];
