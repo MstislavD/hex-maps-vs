@@ -1,4 +1,5 @@
 using System.Drawing.Drawing2D;
+using System.IO.MemoryMappedFiles;
 using HexGeometry;
 using MapGeneration;
 
@@ -42,21 +43,30 @@ namespace HexMapsApp
             reg_gen_mode_dropdown = drop_down_list(typeof(RegionMap.RegionGeneration), toolTip);
             reg_gen_mode_dropdown.SelectedIndexChanged += regenerate_map_keep_seed;
 
-            menuPanel.Controls.AddRange([gen_button, reg_gen_mode_dropdown]);
-
-            Controls.Add(menuPanel);
-
-            menu_width = menuPanel.Width;
-
             Label info = new Label();
-            info.Location = new Point(menu_width + 5, 5);
             info.AutoSize = true;
             new_info += (s, str) => info.Text = str;
+            menuPanel.SizeChanged += (s, e) => info.Location = new Point(menuPanel.Right + 5, 5);
 
-            Controls.Add(info);
+            CheckBox analyse_check = new CheckBox();
+            analyse_check.Text = "Analysis";
+            analyse_check.AutoSize = true;
+            generation_complete += (s, e) => { if (analyse_check.Checked) new_info?.Invoke(s, map.AnalyzeRegions()); };
+            analyse_check.CheckedChanged += (s, e) => info.Visible = analyse_check.Checked;
+            analyse_check.CheckedChanged += (s, e) => { if (analyse_check.Checked) new_info?.Invoke(s, map.AnalyzeRegions()); };
+
+            menuPanel.Controls.AddRange([gen_button, reg_gen_mode_dropdown, analyse_check]);
+
+            Controls.AddRange([menuPanel, info]);
+
+            menu_width = menuPanel.Width;         
+
+            generation_complete += redraw_map;
         }
 
-        event EventHandler<string> new_info;
+        event EventHandler<string>? new_info;
+
+        event EventHandler? generation_complete;
 
 
         static ComboBox drop_down_list(Type enumType, ToolTip toolTip)
@@ -96,10 +106,7 @@ namespace HexMapsApp
                 (RegionMap.RegionGeneration)(reg_gen_mode_dropdown?.SelectedItem ?? RegionMap.RegionGeneration.Random);
             map = RegionMap.Create(columns, rows, levels, reg_gen, rnd);
 
-            //Log(map.AnalyzeRegions());
-            new_info.Invoke(this, map.AnalyzeRegions());
-
-            redraw_map(sender, e);
+            generation_complete?.Invoke(this, e);
         }
 
         static PointF Screen_point(HexGrid.Point p, float factor) => new((float)p.X * factor, (float)p.Y * factor);
