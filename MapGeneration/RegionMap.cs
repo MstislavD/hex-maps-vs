@@ -40,24 +40,16 @@ namespace MapGeneration
         public string AnalyzeRegions()
         {
             int level = hexGrids.Length - 1;
-            var agg = regions[level].AggregateBy(r => GetAncestorAtLevel(r, 0), r => 0, (size, r) => size + 1).Select(r => r.Value).ToList();
-            agg.Sort();
+            var sizes = regions[level].CountBy(r => GetAncestorAtLevel(r, 0)).Select(r => r.Value).Order().ToList();
 
             string result = "";
-            result += $"Min: {agg[0]}";
-            result += $"\nQuantile 25%: {agg[(int)(agg.Count * 0.25)]}";
-            result += $"\nQuantile 50%: {agg[(int)(agg.Count * 0.5)]}";
-            result += $"\nQuantile 75%: {agg[(int)(agg.Count * 0.75)]}";
-            result += $"\nMax: {agg[agg.Count - 1]}";
+            result += $"Min: {sizes[0]}";
+            result += $"\nQuantile 25%: {sizes[(int)(sizes.Count * 0.25)]}";
+            result += $"\nQuantile 50%: {sizes[(int)(sizes.Count * 0.5)]}";
+            result += $"\nQuantile 75%: {sizes[(int)(sizes.Count * 0.75)]}";
+            result += $"\nMax: {sizes[sizes.Count - 1]}";
 
             return result ;
-
-
-            //var region_to_size = agg.ToDictionary();
-            //for (int i = 0; i < hexGrids[0].Size; i++)
-            //{
-            //    Debug.WriteLine($"{i}: {region_to_size[regions[0][i]]}");
-            //}
         }
 
         RegionMap(int rows, int columns, int levels, RegionGeneration reg_gen, Random rnd)
